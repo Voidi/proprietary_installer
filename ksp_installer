@@ -941,7 +941,7 @@ eu/3M5wNURHoh6q8EwL+7/7+G6emoJOd7GQnO9nJTnayk53sZCf7ePs/wOATq26pYJgAAAAASUVO
 RK5CYII=
 EOF
 
-ln -sf "${GamePath}/ksp.desktop" ~/.local/share/applications/
+ln -s "${GamePath}/ksp.desktop" ~/.local/share/applications/
 
 #remove all execution rights from text game files; annoys me if i want them open via filemanager
 find ${GamePath}/GameData ${GamePath}/Ships ${GamePath}/saves -type f  -print0 | xargs -0 chmod a-x

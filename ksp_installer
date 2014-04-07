@@ -58,7 +58,7 @@ Icon=${GamePath}/ksp_icon.png
 Type=Application
 Categories=Game;Simulation;
 Keywords=Space;Building;Simulation;
-Path=${GamePath}/KSP_linux/
+Path=${GamePath}/
 Exec="${GamePath}/ksp_launch"
 EOF
 chmod 700 "${GamePath}/ksp.desktop"

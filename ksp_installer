@@ -13,12 +13,12 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 fi
 
 #Segfault patch
-if [ $(xxd -s "+0x$position1" -l 1 ${GamePath}/KSP.x86_64 | cut -d " " -f 2) = '01' ] && [ $(xxd -s "+0x$position2" -l 1 ${GamePath}/KSP.x86_64 | cut -d " " -f 2) = '01' ]
+if [ $(xxd -s "+0x$position1" -l 1 "${GamePath}/KSP.x86_64" | cut -d ' ' -f 2) = "01" ] && [ $(xxd -s "+0x$position2" -l 1 "${GamePath}/KSP.x86_64" | cut -d ' ' -f 2) = "01" ]
 then
 	echo "Patching Segfault out of the Rockets ..."
-	echo "090f377: 00" | xxd -r - ${GamePath}/KSP.x86_64
-	echo "090f37c: 00" | xxd -r - ${GamePath}/KSP.x86_64
-	if [ $(xxd -s "+0x$position1" -l 1 ${GamePath}/KSP.x86_64 | cut -d " " -f 2) = '00' ] && [ $(xxd -s "+0x$position2" -l 1 ${GamePath}/KSP.x86_64 | cut -d " " -f 2) = '00' ]
+	echo "090f377: 00" | xxd -r - "${GamePath}/KSP.x86_64"
+	echo "090f37c: 00" | xxd -r - "${GamePath}/KSP.x86_64"
+	if [ $(xxd -s "+0x$position1" -l 1 "${GamePath}/KSP.x86_64" | cut -d ' ' -f 2) = "00" ] && [ $(xxd -s "+0x$position2" -l 1 "${GamePath}/KSP.x86_64" | cut -d ' ' -f 2) = "00" ]
 	then
 		echo "Patching successfull."
 	else
@@ -29,7 +29,7 @@ else
 fi
 
 #create the launch script with correct language enviroment variables
-cat > ${GamePath}/ksp_launch <<'EOF'
+cat > "${GamePath}/ksp_launch" <<'EOF'
 #!/bin/sh
 
 cd "`dirname $(readlink -f "${0}")`"
@@ -48,7 +48,7 @@ EOF
 chmod 700 "${GamePath}/ksp_launch"
 
 #create a .desktop file Program starter 
-cat > ${GamePath}/ksp.desktop <<EOF
+cat > "${GamePath}/ksp.desktop" <<EOF
 [Desktop Entry]
 Version=1.0
 Name=Kerbal Space Program
@@ -64,7 +64,7 @@ EOF
 chmod 700 "${GamePath}/ksp.desktop"
 
 #base64 encoded Icon data extracted from KSP.exe
-base64 -d - > ${GamePath}/ksp_icon.png <<EOF
+base64 -d - > "${GamePath}/ksp_icon.png" <<EOF
 iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAABmJLR0QA/wD/AP+gvaeTAAAACXBI
 WXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3gQGEC4OxJKpuAAAIABJREFUeNrsvcevbel55vf70ko7
 n3TzraAqskiKmaK6ZbVbUrcB2VPPPTHgiQf2X2ADPeiJZx4Z9j/iqQEDbbfREGypQVEiRVbdfPLZ
@@ -944,4 +944,4 @@ EOF
 ln -s "${GamePath}/ksp.desktop" ~/.local/share/applications/
 
 #remove all execution rights from text game files; annoys me if i want them open via filemanager
-find ${GamePath}/GameData ${GamePath}/Ships ${GamePath}/saves -type f  -print0 | xargs -0 chmod a-x
+find "${GamePath}/GameData" "${GamePath}/Ships" "${GamePath}/saves" -type f  -print0 | xargs -0 chmod a-x

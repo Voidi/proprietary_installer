@@ -32,7 +32,7 @@ fi
 cat > "${GamePath}/ksp_launch" <<'EOF'
 #!/bin/sh
 
-cd "`dirname $(readlink -f "${0}")`"
+cd "`dirname "$(readlink -f "${0}")"`"
 if [ `arch` = "x86" ]
 then
 	LC_ALL=C ./KSP.x86

@@ -1,11 +1,20 @@
 #!/bin/sh
 #This scripts applys the patch against segfaults, creates a launch script with the right language enviroment and a program starter with icon
 
+GamePath="$(readlink -f "${1:-`pwd`}")"
+
+sighandler_EXIT()
+{
+	rm -f ${GamePath}/cookies.txt ${GamePath}/"$(readlink -f "${0}")".tmp ksp-linux-$latestVersion.zip
+	echo 'Aborting Script'
+	exit 1
+}
+
+trap 'sighandler_EXIT' 1 2 3 15
+
 position1=090f377
 position2=090f37c
 version="23.5"
-
-GamePath="$(readlink -f "${1:-`pwd`}")"
 
 if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 	echo "'${GamePath}' seems not contain a KSP installation."
@@ -945,3 +954,6 @@ ln -s "${GamePath}/ksp.desktop" ~/.local/share/applications/
 
 #remove all execution rights from text game files; annoys me if i want them open via filemanager
 find "${GamePath}/GameData" "${GamePath}/Ships" "${GamePath}/saves" -type f  -print0 | xargs -0 chmod a-x
+
+echo "Kerbal Space Program installation finished. "
+trap 0

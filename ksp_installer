@@ -12,29 +12,22 @@ sighandler_EXIT()
 
 trap 'sighandler_EXIT' 1 2 3 15
 
-position1=090f377
-position2=090f37c
-version="23.5"
-
 if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 	echo "'${GamePath}' seems not contain a KSP installation."
 	exit 1
 fi
 
 #Segfault patch
-if [ $(xxd -s "+0x$position1" -l 1 "${GamePath}/KSP.x86_64" | cut -d ' ' -f 2) = "01" ] && [ $(xxd -s "+0x$position2" -l 1 "${GamePath}/KSP.x86_64" | cut -d ' ' -f 2) = "01" ]
+position1=$(echo "obase=16; $(perl -n0777e 'print pos()-1,"\n" while /\x01\x00\x00\x00\xB8\x01\x00\x00\x00\xC3\x41\x56\x41\x55\x49/g' "${GamePath}/KSP.x86_64") - E" | bc)
+if [ $position1 != "-E" ]
 then
 	echo "Patching Segfault out of the Rockets ..."
-	echo "090f377: 00" | xxd -r - "${GamePath}/KSP.x86_64"
-	echo "090f37c: 00" | xxd -r - "${GamePath}/KSP.x86_64"
-	if [ $(xxd -s "+0x$position1" -l 1 "${GamePath}/KSP.x86_64" | cut -d ' ' -f 2) = "00" ] && [ $(xxd -s "+0x$position2" -l 1 "${GamePath}/KSP.x86_64" | cut -d ' ' -f 2) = "00" ]
-	then
-		echo "Patching successfull."
-	else
-		echo "Patching seems to be not successful."
-	fi
+	cp "${GamePath}/KSP.x86_64" "${GamePath}/KSP.x86_64.unpatched"
+	position2=$(echo "obase=16;ibase=16; $position1 + 5" | bc)
+	echo "$position1: 00" | xxd -r - "${GamePath}/KSP.x86_64"
+	echo "$position2: 00" | xxd -r - "${GamePath}/KSP.x86_64"
 else
-	echo "This seems to be not a vanilla KSP version $version executable."
+	echo "This seems to be not a vanilla KSP executable"
 fi
 
 #create the launch script with correct language enviroment variables

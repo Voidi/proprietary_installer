@@ -11,5 +11,5 @@ After extracting to desired Path, it applys the patch against segfaults, creates
 ```
 wget https://raw.githubusercontent.com/Voidi/proprietary_installer/master/ksp_installer
 chmod u+x ksp_installer
-./ksp_install <Path to Game directory>
+./ksp_installer <Path to Game directory>
 ```

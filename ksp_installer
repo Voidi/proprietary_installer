@@ -21,56 +21,66 @@ trap 'sighandler_EXIT' 1 2 3 15
 
 if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 	echo "'${GamePath}' seems not contain a KSP installation."
-	#TODO skip whole downloading if a ksp archive in current dir is found
-	echo "Download latest linux version from https://kerbalspaceprogram.com"
-
-	#try until succesfull login, proven by version number from download page
-	while [ -z $latestVersion ];
-	do
-		if [ -z ${passwd+x} ] || [ -z ${passwd} ];
-		then
-			echo "Please your enter credentials for your Account at kerbalspaceprogram.com."
-			read -p "Login:" login
-			read -p "Password:" passwd
-		else
-			echo "Using saved credentials."
-		fi
-
-		echo "Login at kerbalspaceprogram.com"
-		#Login and save session id in cookies.txt
-		wget --keep-session-cookies --save-cookies cookies.txt --post-data "logmc=${login}&pwdmc=${passwd}&login=Login" 'https://kerbalspaceprogram.com/index.php' -O /dev/null
-
-		#Which is the latest avaible ksp version
-		latestVersion=$(wget -q "https://kerbalspaceprogram.com/download.php" --load-cookies=cookies.txt -O - | grep -Eo ".*multiplayDwn.php\?version=linux-[0-9]-[0-9]{2}-[0-9]+" | grep -Eo "[0-9]-[0-9]{2}-[0-9]+$" | sort | tail -n 1)
-		if [ -z $latestVersion ];
-		then
-			echo "Wrong login credentials!"
-			#if given credentials are wrong, reset it to force manual input
-			login=''; passwd=''
-		fi
-	done
-
-	if [ $latestVersion ];
+	ls ksp-linux-*.zip > /dev/null 2>&1
+	if [ $? -eq 0 ];
 	then
-		#saving login credentials in this script 
-		awk -v Var_login=$login -v Var_passwd=$passwd '
-		/^#start save$/{print $0; a=1}
-		a == 0 {print $0}
-		a == 1 { print "login='"'"'" Var_login "'"'"'; #save:login"; print "passwd='"'"'" Var_passwd "'"'"'; #save:passwd"; a=2 }
-		/^#end save$/{print $0; a=0}
-		' "$(readlink -f "${0}")" > "$(readlink -f "${0}")".tmp
-		mv "$(readlink -f "${0}")".tmp "$(readlink -f "${0}")"
-		chmod a+x "$(readlink -f "${0}")"
-
-		echo "Download Kerbal Space Program Version $latestVersion"
-		trap "rm ksp-linux-${latestVersion}.zip rm cookies.txt" 1 2 3 15
-		wget --load-cookies=cookies.txt "https://kerbalspaceprogram.com/lib/multiplayDwn.php?version=linux-${latestVersion}" -O "ksp-linux-$latestVersion.zip"
-		trap 'sighandler_EXIT' 1 2 3 15
-		rm cookies.txt
-		unzip "ksp-linux-${latestVersion}.zip" -d "$GamePath"
+		archiveFile=$(ls ksp-linux-*.zip 2> /dev/null | sort | tail -n1)
+		echo "But found $archiveFile"
+		unzip $archiveFile -d "$GamePath"
 		#the archive contains the 'KSP_linux' directory, we move it's content to desired ${GamePath}
 		mv "${GamePath}/"KSP_linux/* "${GamePath}/"
 		rmdir "${GamePath}/"KSP_linux
+	else
+		echo "Download latest linux version from https://kerbalspaceprogram.com"
+
+		#try until succesfull login, proven by version number from download page
+		while [ -z $latestVersion ];
+		do
+			if [ -z ${passwd+x} ] || [ -z ${passwd} ];
+			then
+				echo "Please your enter credentials for your Account at kerbalspaceprogram.com."
+				read -p "Login:" login
+				read -p "Password:" passwd
+			else
+				echo "Using saved credentials."
+			fi
+
+			echo "Login at kerbalspaceprogram.com"
+			#Login and save session id in cookies.txt
+			wget --keep-session-cookies --save-cookies cookies.txt --post-data "logmc=${login}&pwdmc=${passwd}&login=Login" 'https://kerbalspaceprogram.com/index.php' -O /dev/null
+
+			#Which is the latest avaible ksp version
+			latestVersion=$(wget -q "https://kerbalspaceprogram.com/download.php" --load-cookies=cookies.txt -O - | grep -Eo ".*multiplayDwn.php\?version=linux-[0-9]-[0-9]{2}-[0-9]+" | grep -Eo "[0-9]-[0-9]{2}-[0-9]+$" | sort | tail -n 1)
+			if [ -z $latestVersion ];
+			then
+				echo "Wrong login credentials!"
+				#if given credentials are wrong, reset it to force manual input
+				login=''; passwd=''
+			fi
+		done
+
+		if [ $latestVersion ];
+		then
+			#saving login credentials in this script
+			awk -v Var_login=$login -v Var_passwd=$passwd '
+			/^#start save$/{print $0; a=1}
+			a == 0 {print $0}
+			a == 1 { print "login='"'"'" Var_login "'"'"'; #save:login"; print "passwd='"'"'" Var_passwd "'"'"'; #save:passwd"; a=2 }
+			/^#end save$/{print $0; a=0}
+			' "$(readlink -f "${0}")" > "$(readlink -f "${0}")".tmp
+			mv "$(readlink -f "${0}")".tmp "$(readlink -f "${0}")"
+			chmod a+x "$(readlink -f "${0}")"
+
+			echo "Download Kerbal Space Program Version $latestVersion"
+			trap "rm ksp-linux-${latestVersion}.zip rm cookies.txt" 1 2 3 15
+			wget --load-cookies=cookies.txt "https://kerbalspaceprogram.com/lib/multiplayDwn.php?version=linux-${latestVersion}" -O "ksp-linux-$latestVersion.zip"
+			trap 'sighandler_EXIT' 1 2 3 15
+			rm cookies.txt
+			unzip "ksp-linux-${latestVersion}.zip" -d "$GamePath"
+			#the archive contains the 'KSP_linux' directory, we move it's content to desired ${GamePath}
+			mv "${GamePath}/"KSP_linux/* "${GamePath}/"
+			rmdir "${GamePath}/"KSP_linux
+		fi
 	fi
 fi
 

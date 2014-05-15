@@ -8,6 +8,7 @@ This scripts searches for an existing KSP Installation in the current dir or at 
 If no KSP executable is found it will try to download the newest release from https://kerbalspaceprogram.com.
 You will be ask for your KSP Store login credentials (if correct, the will saved in YOUR copy of this script).
 After extracting to desired Path, it applys the patch against segfaults, creates a launch script with the right language enviroment and a program starter with icon.
+Dependencies: aside from standard *nix tools, xxd (included in the vim project) and perl required for binary patching
 ```
 wget https://raw.githubusercontent.com/Voidi/proprietary_installer/master/ksp_installer
 chmod u+x ksp_installer

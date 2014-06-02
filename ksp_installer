@@ -8,7 +8,7 @@ login=''; #save:login
 passwd=''; #save:passwd
 #end save
 
-GamePath="$(readlink -f "${1:-`pwd`}")"
+GamePath="$(readlink -m "${1:-`pwd`}")"
 
 sighandler_EXIT()
 {
@@ -26,7 +26,8 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 	then
 		archiveFile=$(ls ksp-linux-*.zip 2> /dev/null | sort | tail -n1)
 		echo "But found $archiveFile"
-		unzip $archiveFile -d "$GamePath"
+		mkdir -p "${GamePath}"
+		unzip $archiveFile -d "${GamePath}"
 		#the archive contains the 'KSP_linux' directory, we move it's content to desired ${GamePath}
 		mv "${GamePath}/"KSP_linux/* "${GamePath}/"
 		rmdir "${GamePath}/"KSP_linux

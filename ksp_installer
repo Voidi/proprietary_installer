@@ -19,6 +19,8 @@ sighandler_EXIT()
 
 trap 'sighandler_EXIT' 1 2 3 15
 
+mkdir -p "${GamePath}"
+
 if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 	echo "'${GamePath}' seems not contain a KSP installation."
 	ls ksp-linux-*.zip > /dev/null 2>&1
@@ -26,7 +28,6 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 	then
 		archiveFile=$(ls ksp-linux-*.zip 2> /dev/null | sort | tail -n1)
 		echo "But found $archiveFile"
-		mkdir -p "${GamePath}"
 		unzip $archiveFile -d "${GamePath}"
 		#the archive contains the 'KSP_linux' directory, we move it's content to desired ${GamePath}
 		mv "${GamePath}/"KSP_linux/* "${GamePath}/"

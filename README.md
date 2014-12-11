@@ -18,7 +18,7 @@ chmod u+x ksp_installer
 teamspeak3_installer
 -------------
 This scripts searches for an existing TeamSpeak3 Client Installation in the current dir or at Path given as commandline argument.
-If no TeamSpeak3 Client executable is found it will try to download the newest release from https://kerbalspaceprogram.com.
+If no TeamSpeak3 Client executable is found it will try to download the newest release from https://dl.4players.de.
 After extracting to desired Path, creates a program starter with icon.
 ```
 wget https://raw.githubusercontent.com/Voidi/proprietary_installer/master/teamspeak3_installer

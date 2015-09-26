@@ -49,7 +49,14 @@ mkdir -p "${programPath}"
 #This is necessary because the original Teamspeak archive cannot handle Pathname with Spaces
 tmpdir=$(mktemp --tmpdir -d teamspeak_installer3XXX)
 printf "\ny\n" | ./TeamSpeak3-Client-linux_${arch}-${version}.run --nox11 --target "${tmpdir}"
-cp -rf "${tmpdir}"/* "${programPath}"
+exitStatus=$?
+if [ $exitStatus -eq 0 ];
+then
+  cp -rf "${tmpdir}"/* "${programPath}"
+else
+  echo "Teamspeak3 Client installer exited abnormal with Status $exitStatus"
+  exit 1
+fi
 rm -R "${tmpdir}"
 
 #Teamspeak3 SVG Icon found on the Internetz
@@ -925,3 +932,4 @@ EOF
 chmod u+x "${applicationsStarterPath}/teamspeak3.desktop"
 
 echo "TeamSpeak3 Client installation in '${programPath}' finished."
+echo "You can now delete the installer archiv $PWD/${installer_file}."

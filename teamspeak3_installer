@@ -12,12 +12,6 @@ downloadBaseURL="http://dl.4players.de/ts/releases"
 #use current dir as standart installation path if no target is given, as argument
 programPath="$(readlink -m "${1:-`pwd`/Teamspeak3}")"
 
-applicationsStarterPath="$(readlink -m ~/.local/share/applications)"
-if [ $(id -u) -eq 0 ];
-then
-	applicationsStarterPath="/usr/share/applications"
-fi
-
 if [ $(arch) = "x86" ];
 then
 	arch=x86
@@ -916,7 +910,7 @@ cat > "${programPath}/teamspeak3_icon.svg" <<EOF
 EOF
 
 #create a .desktop file Program starter 
-cat > "${applicationsStarterPath}/teamspeak3.desktop" <<EOF
+cat > "${programPath}/TeamSpeakSystems-TeamSpeak3.desktop" <<EOF
 [Desktop Entry]
 Version=1.0
 Name=TeamSpeak 3 Client
@@ -930,7 +924,7 @@ Exec="${programPath}/ts3client_runscript.sh"
 StartupWMClass=Teamspeak
 StartupNotify=true
 EOF
-chmod u+x "${applicationsStarterPath}/teamspeak3.desktop"
+xdg-desktop-menu install "${programPath}/TeamSpeakSystems-TeamSpeak3.desktop"
 
 echo "TeamSpeak3 Client installation in '${programPath}' finished."
 echo "You can now delete the installer archiv $PWD/${installer_file}."

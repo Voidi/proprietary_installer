@@ -52,10 +52,11 @@ printf "\ny\n" | ./TeamSpeak3-Client-linux_${arch}-${version}.run --nox11 --targ
 exitStatus=$?
 if [ $exitStatus -eq 0 ];
 then
-  cp -rf "${tmpdir}"/* "${programPath}"
+	cp -rf "${tmpdir}"/* "${programPath}"
 else
-  echo "Teamspeak3 Client installer exited abnormal with Status $exitStatus"
-  exit 1
+	echo "Teamspeak3 Client installer exited abnormal with Status $exitStatus"
+	rm -R "${tmpdir}"
+	exit 1
 fi
 rm -R "${tmpdir}"
 

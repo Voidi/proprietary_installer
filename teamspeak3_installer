@@ -23,7 +23,7 @@ fi
 #echo $applicationsStarterPath
 
 #parse dirs given via http for latest release
-version="$(wget -q ${downloadBaseURL} -O - | sed -n -e 's/.*<a href=\"\(3\.[0-9]\.[0-9]*\/\)\">.*/\1/p' | tail -n 1 | cut -d '/' -f 1)"
+version="$(wget -q ${downloadBaseURL} -O - | sed -n -e 's/.*<a href=\"\(3\.[0-9]\.[0-9]*.*\)\/\">.*/\1/p' | sort -n | tail -n 1)"
 installer_file="$(wget -q ${downloadBaseURL}/${version}/ -O - | grep -o "TeamSpeak3-Client-linux_${arch}" | tail -n 1)-${version}.run"
 
 #if you already download the latest version (via this script), place it in current dir, to skip download

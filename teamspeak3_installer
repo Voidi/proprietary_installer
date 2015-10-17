@@ -1,14 +1,31 @@
 #!/usr/bin/env sh
 #This scripts downloads the latest TeamSpeak3 Client installer for your architecture and creates and a program starter with icon.
 
+downloadBaseURL="http://dl.4players.de/ts/releases"
+
 #some Hackaround
 killLess() {
 	echo "Kill all the EULA!"
 	sleep 0.1
 	killall less
 }
-downloadBaseURL="http://dl.4players.de/ts/releases"
 
+downloadInstallerArchive() {
+  trap "rm $installer_file; sighandler_EXIT" 1 2 3 15
+  echo "Download latest Teamspeak3 Client install archive from Mirror ${downloadBaseURL}"
+  wget "${downloadBaseURL}/${version}/$(echo $installer_file | grep $arch)"
+  trap 1 2 3 15
+}
+
+sighandler_EXIT()
+{
+  echo 'Aborting Script'
+  exit 1
+}
+
+cleanUp() {
+  rm -R "${tmpdir}"
+}
 #use current dir as standart installation path if no target is given, as argument
 programPath="$(readlink -m "${1:-`pwd`/Teamspeak3}")"
 
@@ -19,9 +36,6 @@ elif [ $(arch) = "x86_64" ]; then
 	arch=amd64
 fi
 
-#echo $programPath
-#echo $applicationsStarterPath
-
 #parse dirs given via http for latest release
 version="$(wget -q ${downloadBaseURL} -O - | sed -n -e 's/.*<a href=\"\(3\.[0-9]\.[0-9]*.*\)\/\">.*/\1/p' | sort -n | tail -n 1)"
 installer_file="$(wget -q ${downloadBaseURL}/${version}/ -O - | grep -o "TeamSpeak3-Client-linux_${arch}" | tail -n 1)-${version}.run"
@@ -29,8 +43,7 @@ installer_file="$(wget -q ${downloadBaseURL}/${version}/ -O - | grep -o "TeamSpe
 #if you already download the latest version (via this script), place it in current dir, to skip download
 if [ ! -f ${installer_file} ];
 then
-	echo "Download latest Teamspeak3 Client install archive from Mirror ${downloadBaseURL}"
-	wget "${downloadBaseURL}/${version}/$(echo $installer_file | grep $arch)"
+  downloadInstallerArchive
 fi
 chmod u+x "$installer_file"
 
@@ -43,16 +56,25 @@ mkdir -p "${programPath}"
 #This is necessary because the original Teamspeak archive cannot handle Pathname with Spaces
 tmpdir=$(mktemp --tmpdir -d teamspeak_installer3XXX)
 printf "\ny\n" | ./TeamSpeak3-Client-linux_${arch}-${version}.run --nox11 --target "${tmpdir}"
+# return code 2 means the hash verification failed, and the archive is probably corrupt
 exitStatus=$?
-if [ $exitStatus -eq 0 ];
+
+if [ $exitStatus -eq 2 ];
+then
+  #downloadInstallerArchive
+  echo "The Teamspeak3 Client installer hash verification failed, and the archive is probably corrupt."
+  echo "Try deleting "$installer_file" and rerun the script"
+  cleanUp
+  exit 1
+elif [ $exitStatus -eq 0 ];
 then
 	cp -rf "${tmpdir}"/* "${programPath}"
 else
 	echo "Teamspeak3 Client installer exited abnormal with Status $exitStatus"
-	rm -R "${tmpdir}"
+	cleanUp
 	exit 1
 fi
-rm -R "${tmpdir}"
+cleanUp
 
 #Teamspeak3 SVG Icon found on the Internetz
 cat > "${programPath}/teamspeak3_icon.svg" <<EOF

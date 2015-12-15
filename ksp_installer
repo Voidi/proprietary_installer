@@ -8,12 +8,17 @@ login=''; #save:login
 passwd=''; #save:passwd
 #end save
 
-GamePath="$(readlink -m "${1:-`pwd`}")"
+GamePath="$(readlink -m "${1:-${pwd}}")"
+BASEURL="https://kerbalspaceprogram.com/"
+VERSION_REGEX="[0-9]-[0-9]{1,2}-[0-9]+"
 
 sighandler_EXIT()
 {
 	rm -f cookies.txt "$(readlink -f "${0}")".tmp
-	echo 'Aborting Script'
+	if [ -f "ksp-linux-${latestVersion}.zip" ]; then
+	rm "ksp-linux-${latestVersion}.zip"
+	fi
+	echo 'Aborting Install Script'
 	exit 1
 }
 
@@ -26,9 +31,9 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 	ls ksp-linux-*.zip > /dev/null 2>&1
 	if [ $? -eq 0 ];
 	then
-		archiveFile=$(ls ksp-linux-*.zip 2> /dev/null | sort | tail -n1)
+		archiveFile=$(find . -name "ksp-linux-*.zip" 2> /dev/null | sort | tail -n1 )
 		echo "But found $archiveFile"
-		unzip $archiveFile -d "${GamePath}"
+		unzip "$archiveFile" -d "${GamePath}"
 		#the archive contains the 'KSP_linux' directory, we move it's content to desired ${GamePath}
 		mv "${GamePath}/"KSP_linux/* "${GamePath}/"
 		rmdir "${GamePath}/"KSP_linux
@@ -36,9 +41,9 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 		echo "Download latest linux version from https://kerbalspaceprogram.com"
 
 		#try until succesfull login, proven by version number from download page
-		while [ -z $latestVersion ];
+		while [ -z "$latestVersion" ];
 		do
-			if [ -z ${passwd+x} ] || [ -z ${passwd} ];
+			if [ -z "${passwd+x}" ] || [ -z ${passwd} ];
 			then
 				echo "Please your enter credentials for your Account at kerbalspaceprogram.com."
 				read -p "Login:" login
@@ -49,11 +54,15 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 
 			echo "Login at kerbalspaceprogram.com"
 			#Login and save session id in cookies.txt
-			wget --keep-session-cookies --save-cookies cookies.txt --post-data "logmc=${login}&pwdmc=${passwd}&login=Login" 'https://kerbalspaceprogram.com/kspstore/' -O /dev/null
+			wget -q --keep-session-cookies --save-cookies cookies.txt --post-data "logmc=${login}&pwdmc=${passwd}&login=Login" "${BASEURL}kspstore/index.php" -O /dev/null
+
+			#Get your account page for download site parameeter
+			downloadParameter=$(wget -q "https://kerbalspaceprogram.com/profile.php?userProf=info" --load-cookies=cookies.txt -O - | sed -rn 's/.*<a href="download.php\?od=([0-9]*)">.*/\1/p')
 
 			#Which is the latest avaible ksp version
-			latestVersion=$(wget -q "https://kerbalspaceprogram.com/download.php?od=193097" --load-cookies=cookies.txt -O - | grep -Eo ".*highwindsDwn.php\?version=linux-[0-9]-[0-9]+-[0-9]+" | grep -Eo "[0-9]-[0-9]+-[0-9]+$" | sort | tail -n 1)
-			if [ -z $latestVersion ];
+			latestVersion=$(wget -q "${BASEURL}download.php?od=$downloadParameter" --load-cookies=cookies.txt -O - | grep -Eo ".*lib/highwindsDwn.php\?version=linux-$VERSION_REGEX" | grep -Eo "$VERSION_REGEX$" | sort | tail -n 1)
+
+			if [ -z "$latestVersion" ];
 			then
 				echo "Wrong login credentials!"
 				#if given credentials are wrong, reset it to force manual input
@@ -61,7 +70,7 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 			fi
 		done
 
-		if [ $latestVersion ];
+		if [ "$latestVersion" ];
 		then
 			#saving login credentials in this script
 			awk -v Var_login=$login -v Var_passwd=$passwd '
@@ -74,9 +83,8 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 			chmod a+x "$(readlink -f "${0}")"
 
 			echo "Download Kerbal Space Program Version $latestVersion"
-			trap "rm ksp-linux-${latestVersion}.zip rm cookies.txt" 1 2 3 15
-			wget --load-cookies=cookies.txt "https://kerbalspaceprogram.com/lib/highwindsDwn.php?version=linux-${latestVersion}" -O "ksp-linux-$latestVersion.zip"
 			trap 'sighandler_EXIT' 1 2 3 15
+			wget --load-cookies=cookies.txt "${BASEURL}lib/highwindsDwn.php?version=linux-${latestVersion}" -O "ksp-linux-$latestVersion.zip"
 			rm cookies.txt
 			unzip "ksp-linux-${latestVersion}.zip" -d "$GamePath"
 			#the archive contains the 'KSP_linux' directory, we move it's content to desired ${GamePath}
@@ -88,7 +96,7 @@ fi
 
 #Segfault patch
 position1=$(echo "obase=16; $(perl -n0777e 'print pos()-1,"\n" while /\x01\x00\x00\x00\xB8\x01\x00\x00\x00\xC3\x41\x56\x41\x55\x49/g' "${GamePath}/KSP.x86_64") - E" | bc)
-if [ $position1 != "-E" ]
+if [ "$position1" != "-E" ]
 then
 	echo "Patching Segfault out of the Rockets ..."
 	cp "${GamePath}/KSP.x86_64" "${GamePath}/KSP.x86_64.unpatched"

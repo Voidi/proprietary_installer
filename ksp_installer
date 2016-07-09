@@ -46,8 +46,10 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 			if [ -z "${passwd+x}" ] || [ -z ${passwd} ];
 			then
 				echo "Please your enter credentials for your Account at kerbalspaceprogram.com."
-				read -p "Login:" login
-				read -p "Password:" passwd
+				echo "Login:"
+				read login
+				echo "Password:"
+				read  passwd
 			else
 				echo "Using saved credentials."
 			fi

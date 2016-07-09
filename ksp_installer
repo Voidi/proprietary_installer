@@ -126,7 +126,7 @@ else
 fi
 cd -
 EOF
-chmod 700 "${GamePath}/ksp_launch"
+chmod u+rx "${GamePath}/ksp_launch"
 
 #create a .desktop file Program starter 
 cat > "${GamePath}/squad-ksp.desktop" <<EOF
@@ -142,7 +142,7 @@ Keywords=Space;Building;Simulation;
 Path=${GamePath}/
 Exec="${GamePath}/ksp_launch"
 EOF
-chmod 700 "${GamePath}/ksp.desktop"
+chmod u+rx "${GamePath}/squad-ksp.desktop"
 
 #base64 encoded Icon data extracted from KSP.exe
 base64 -d - > "${GamePath}/ksp_icon.png" <<EOF

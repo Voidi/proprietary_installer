@@ -945,6 +945,7 @@ path="${programPath}"
 Exec="${programPath}/ts3client_runscript.sh"
 StartupWMClass=Teamspeak
 StartupNotify=true
+StartupWMClass=ts3client_linux_amd64
 EOF
 xdg-desktop-menu install "${programPath}/TeamSpeakSystems-TeamSpeak3.desktop"
 

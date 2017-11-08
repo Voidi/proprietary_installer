@@ -12,10 +12,18 @@ GamePath="$(readlink -m "${1:-${pwd}}")"
 BASEURL="https://kerbalspaceprogram.com/"
 VERSION_REGEX="[0-9]-[0-9]{1,2}-[0-9]+"
 
+echored() {
+	printf "\033[33;31m${1}\033[33;0m\n"
+}
+
+echogreen() {
+	printf "\033[33;32m${1}\033[33;0m\n"
+}
+
 extractArchiv() {
 			unzip "${1}" -d "$GamePath"
 			if [ $? != 0 ]; then
-				echo "Could not extract Archive"
+				echored "Could not extract Archive"
 				exit 1
 			fi
 
@@ -29,7 +37,7 @@ sighandler_EXIT() {
 	if [ -f "ksp-linux-${latestVersion}.zip" ]; then
 	rm "ksp-linux-${latestVersion}.zip"
 	fi
-	echo 'Aborting Install Script'
+	echored 'Aborting Install Script'
 	exit 1
 }
 
@@ -38,7 +46,7 @@ trap 'sighandler_EXIT' 1 2 3 15
 mkdir -p "${GamePath}"
 
 if [ ! -f "${GamePath}/KSP.x86_64" ]; then
-	echo "'${GamePath}' seems not contain a KSP installation."
+	echogreen "'${GamePath}' seems not contain an existing KSP installation. Continuing with a new installtion"
 	ls ksp-linux-*.zip > /dev/null 2>&1
 	if [ $? -eq 0 ];
 	then
@@ -46,23 +54,23 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 		echo "But found $archiveFile"
 		extractArchiv "${archiveFile}"
 	else
-		echo "Download latest linux version from https://kerbalspaceprogram.com"
+		echogreen "Download latest linux version from https://kerbalspaceprogram.com"
 
 		#try until succesfull login, proven by version number from download page
 		while [ -z "$latestVersion" ];
 		do
 			if [ -z "${passwd+x}" ] || [ -z ${passwd} ];
 			then
-				echo "Please your enter credentials for your Account at kerbalspaceprogram.com."
+				echogreen "Please your enter credentials for your Account at kerbalspaceprogram.com."
 				echo "Login:"
 				read login
 				echo "Password:"
 				read  passwd
 			else
-				echo "Using saved credentials."
+				echogreen "Using saved credentials."
 			fi
 
-			echo "Login at kerbalspaceprogram.com"
+			echogreen "Login at kerbalspaceprogram.com"
 			#Login and save session id in cookies.txt
 			wget -q --keep-session-cookies --save-cookies cookies.txt --post-data "logmc=${login}&pwdmc=${passwd}&login=Login" "${BASEURL}kspstore/index.php" -O /dev/null
 
@@ -74,7 +82,7 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 
 			if [ -z "$latestVersion" ];
 			then
-				echo "Wrong login credentials!"
+				echored "Wrong login credentials!"
 				#if given credentials are wrong, reset it to force manual input
 				login=''; passwd=''
 			fi
@@ -92,7 +100,7 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 			mv "$(readlink -f "${0}")".tmp "$(readlink -f "${0}")"
 			chmod a+x "$(readlink -f "${0}")"
 
-			echo "Download Kerbal Space Program Version $latestVersion"
+			echogreen "Download Kerbal Space Program Version $latestVersion"
 			trap 'sighandler_EXIT' 1 2 3 15
 			wget --load-cookies=cookies.txt "${BASEURL}lib/highwindsDwn.php?version=linux-${latestVersion}" -O "ksp-linux-$latestVersion.zip"
 			rm cookies.txt
@@ -101,17 +109,19 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 	fi
 fi
 
+echogreen "Installation from archive succesfull. Continuing with patching and System integration"
+
 #Segfault patch
 position1=$(echo "obase=16; $(perl -n0777e 'print pos()-1,"\n" while /\x01\x00\x00\x00\xB8\x01\x00\x00\x00\xC3\x41\x56\x41\x55\x49/g' "${GamePath}/KSP.x86_64") - E" | bc)
 if [ "$position1" != "-E" ]
 then
-	echo "Patching Segfault out of the Rockets ..."
+	echogreen "Patching Segfault out of the Rockets ..."
 	cp "${GamePath}/KSP.x86_64" "${GamePath}/KSP.x86_64.unpatched"
 	position2=$(echo "obase=16;ibase=16; $position1 + 5" | bc)
 	echo "$position1: 00" | xxd -r - "${GamePath}/KSP.x86_64"
 	echo "$position2: 00" | xxd -r - "${GamePath}/KSP.x86_64"
 else
-	echo "This seems to be not a vanilla KSP executable"
+	echogreen "Patching seems not necessary(Game version without that bug) or possible(already modified executable?)"
 fi
 
 #create the launch script with correct language enviroment variables
@@ -1032,4 +1042,4 @@ xdg-desktop-menu install "${GamePath}/squad-ksp.desktop"
 #remove all execution rights from text game files; annoys me if i want them open via filemanager
 find "${GamePath}/GameData" "${GamePath}/Ships" "${GamePath}/saves" -type f  -print0 | xargs -0 chmod a-x
 
-echo "Kerbal Space Program installation in '${GamePath}' finished. "
+echogreen "Kerbal Space Program installation in '${GamePath}' finished.

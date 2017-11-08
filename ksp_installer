@@ -10,7 +10,7 @@ passwd=''; #save:passwd
 
 GamePath="$(readlink -m "${1:-${pwd}}")"
 BASEURL="https://kerbalspaceprogram.com/"
-VERSION_REGEX="[0-9]-[0-9]{1,2}-[0-9]+"
+VERSION_REGEX="lin(ux)?-[0-9]-[0-9]{1,2}(-[0-9])?"
 
 echored() {
 	printf "\033[33;31m${1}\033[33;0m\n"
@@ -34,8 +34,8 @@ extractArchiv() {
 
 sighandler_EXIT() {
 	rm -f cookies.txt "$(readlink -f "${0}")".tmp
-	if [ -f "ksp-linux-${latestVersion}.zip" ]; then
-	rm "ksp-linux-${latestVersion}.zip"
+	if [ -f "${archiveFile}" ]; then
+		rm "${archiveFile}"
 	fi
 	echored 'Aborting Install Script'
 	exit 1
@@ -51,13 +51,13 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 	if [ $? -eq 0 ];
 	then
 		archiveFile=$(find . -name "ksp-linux-*.zip" 2> /dev/null | sort | tail -n1 )
-		echo "But found $archiveFile"
+		echogreen "Use existing archive ${archiveFile}"
 		extractArchiv "${archiveFile}"
 	else
 		echogreen "Download latest linux version from https://kerbalspaceprogram.com"
 
 		#try until succesfull login, proven by version number from download page
-		while [ -z "$latestVersion" ];
+		while [ -z "${latestVersionString}" ];
 		do
 			if [ -z "${passwd+x}" ] || [ -z ${passwd} ];
 			then
@@ -78,9 +78,9 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 			downloadParameter=$(wget -q "https://kerbalspaceprogram.com/profile.php?userProf=info" --load-cookies=cookies.txt -O - | sed -rn 's/.*<a href="download.php\?od=([0-9]*)">.*/\1/p')
 
 			#Which is the latest avaible ksp version
-			latestVersion=$(wget -q "${BASEURL}download.php?od=$downloadParameter" --load-cookies=cookies.txt -O - | grep -Eo ".*lib/highwindsDwn.php\?version=linux-$VERSION_REGEX" | grep -Eo "$VERSION_REGEX$" | sort | tail -n 1)
+			latestVersionString=$(wget -q "${BASEURL}download.php?od=$downloadParameter" --load-cookies=cookies.txt -O - | grep -Eo ".*lib/highwindsDwn.php\?version=$VERSION_REGEX" | grep -Eo "$VERSION_REGEX$" | sort -u -t- -k 2,2n -k 3,3n -k 4,4n | tail -n 1)
 
-			if [ -z "$latestVersion" ];
+			if [ -z "${latestVersionString}" ];
 			then
 				echored "Wrong login credentials!"
 				#if given credentials are wrong, reset it to force manual input
@@ -88,8 +88,10 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 			fi
 		done
 
-		if [ "$latestVersion" ];
+		if [ "${latestVersionString}" ];
 		then
+			archiveFile=ksp-linux-$(echo "${latestVersionString}" | sed -rn 's/lin(ux)?-()/\2/p').zip
+
 			#saving login credentials in this script
 			awk -v Var_login=$login -v Var_passwd=$passwd '
 			/^#start save$/{print $0; a=1}
@@ -102,7 +104,7 @@ if [ ! -f "${GamePath}/KSP.x86_64" ]; then
 
 			echogreen "Download Kerbal Space Program Version $latestVersion"
 			trap 'sighandler_EXIT' 1 2 3 15
-			wget --load-cookies=cookies.txt "${BASEURL}lib/highwindsDwn.php?version=linux-${latestVersion}" -O "ksp-linux-$latestVersion.zip"
+			wget --load-cookies=cookies.txt "${BASEURL}lib/highwindsDwn.php?version=${latestVersionString}" -O "${archiveFile}"
 			rm cookies.txt
 			extractArchiv "${archiveFile}"
 		fi

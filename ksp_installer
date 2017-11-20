@@ -1044,4 +1044,4 @@ xdg-desktop-menu install "${GamePath}/squad-ksp.desktop"
 #remove all execution rights from text game files; annoys me if i want them open via filemanager
 find "${GamePath}/GameData" "${GamePath}/Ships" "${GamePath}/saves" -type f  -print0 | xargs -0 chmod a-x
 
-echogreen "Kerbal Space Program installation in '${GamePath}' finished.
+echogreen "Kerbal Space Program installation in '${GamePath}' finished."

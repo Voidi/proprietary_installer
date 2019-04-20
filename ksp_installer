@@ -10,11 +10,12 @@ passwd=''; #save:passwd
 
 GamePath="$(readlink -m "${1:-${pwd}}")"
 BASEURL="https://www.kerbalspaceprogram.com"
-VERSION_REGEX="lin(ux)?-[0-9]-[0-9]{1,2}(-[0-9])?"
+VERSION_REGEX="linux-zip-[0-9]-[0-9]{1,2}(-[0-9])?"
+VERSION_REGEX_DLC1="linux-dlc-mhe-en-us-[0-9]-[0-9]{1,2}(-[0-9])?"
 archiveFile=""
 
-basegameInstallFile="$(find . -maxdepth 1 -regextype posix-extended -regex '.*ksp-linux-[[:digit:]]-[[:digit:]]{1,2}-?[[:digit:]]{0,2}.zip' -print -quit)"
-dlc1InstallFile="$(find . -maxdepth 1 -regextype posix-extended -regex '.*ksp-linux-dlc.*[[:digit:]]-[[:digit:]]{1,2}-?[[:digit:]]{0,2}.zip' -print -quit)"
+basegameInstallFile=""
+dlc1InstallFile=""
 
 echored() {
 	printf "\033[33;31m${1}\033[33;0m\n"
@@ -24,10 +25,15 @@ echogreen() {
 	printf "\033[33;32m${1}\033[33;0m\n"
 }
 
-download() {
-	archiveFile="ksp-linux-$(echo "${1}" | sed -rn 's/lin(ux)?-()/\2/p').zip"
+findInstallArchives() {
+	basegameInstallFile="$(find . -maxdepth 1 -regextype posix-extended -regex '.*ksp-linux-zip-[[:digit:]]-[[:digit:]]{1,2}-?[[:digit:]]{0,2}.zip' -print -quit)"
+	dlc1InstallFile="$(find . -maxdepth 1 -regextype posix-extended -regex '.*ksp-linux-dlc.*[[:digit:]]-[[:digit:]]{1,2}-?[[:digit:]]{0,2}.zip' -print -quit)"
+}
 
-	echogreen "Download Kerbal Space Program Version ${1} (No there will be no progress bar!)"
+download() {
+	archiveFile="ksp-${1}.zip" #"ksp-linux-$(echo "${1}" | sed -rn 's/lin(ux)?-()/\2/p').zip"
+
+	echogreen "Download Version ${1}"
 	trap 'sighandler_EXIT' EXIT INT TERM
 	wget --load-cookies=cookies.txt "${BASEURL}/lib/highwindsDwn.php?version=${1}" -O "${archiveFile}"
 	trap EXIT INT TERM
@@ -54,7 +60,7 @@ sighandler_EXIT() {
 	exit 1
 }
 
-mkdir -p "${GamePath}"
+findInstallArchives
 
 if [ ! -f "${GamePath}/buildID.txt" ]; then
 	echogreen "'${GamePath}' seems not contain an existing KSP installation. Continuing with a new installtion"
@@ -86,7 +92,7 @@ if [ ! -f "${GamePath}/buildID.txt" ]; then
 			downloadParameter=$(wget -q "${BASEURL}/profile.php?userProf=info" --load-cookies=cookies.txt -O - | sed -rn 's/.*<a href="download\.php\?od=([0-9]*)">.*/\1/p')
 
 			#Which is the latest avaible ksp version
-			latestVersionString=$(wget -q "${BASEURL}/download.php?od=$downloadParameter" --load-cookies=cookies.txt -O - | grep -Eo ".*lib/highwindsDwn.php\?version=$VERSION_REGEX" | grep -Eo "$VERSION_REGEX$" | sort -u -t- -k 2,2n -k 3,3n -k 4,4n | tail -n 1)
+			latestVersionString=$(wget -q "${BASEURL}/download.php?od=$downloadParameter" --load-cookies=cookies.txt -O - | grep -Eo ".*lib/highwindsDwn.php\?version=$VERSION_REGEX" | grep -Eo "$VERSION_REGEX$" | sort -u -t- -V | tail -n 1)
 
 			if [ -z "${latestVersionString}" ];
 			then
@@ -107,18 +113,29 @@ if [ ! -f "${GamePath}/buildID.txt" ]; then
 			' "$(readlink -f "${0}")" > "$(readlink -f "${0}")".tmp
 			mv "$(readlink -f "${0}")".tmp "$(readlink -f "${0}")"
 			chmod a+x "$(readlink -f "${0}")"
-		fi
-	fi
-	trap EXIT INT TERM
 
+			echogreen "Succesfully loged in and saved credentials."
+		fi
+		trap EXIT INT TERM
+	fi
+
+	mkdir -p "${GamePath}"
+
+	# Base Game
 	if [ -n "${basegameInstallFile}" ]
 	then
 		archiveFile="$(find . -maxdepth 1 -name "ksp-linux-*.zip" 2> /dev/null | sort | tail -n1 )"
 		echogreen "Use existing archive ${basegameInstallFile}"
 	else
+		if [ ! -f "cookies.txt" ]
+		then
+			echored "You don't have succesfully loged into your Account at ${BASEURL}. Can't download Game. Aborting"
+			exit 1
+		fi
 		echogreen "Download latest linux version from https://kerbalspaceprogram.com"
 		download "${latestVersionString}"
 	fi
+	findInstallArchives
 	extractBaseGameArchiv "${basegameInstallFile}"
 
 	# DLC: Making History
@@ -132,7 +149,7 @@ if [ ! -f "${GamePath}/buildID.txt" ]; then
 	else
 		downloadParameter=$(wget -q "${BASEURL}/profile.php?userProf=info" --load-cookies=cookies.txt -O - | sed -rn 's/.*<a href="downloadMHE\.php\?od=([0-9]*)">.*/\1/p')
 		if [ "${downloadParameter}" ]; then
-			latestVersionString=$(wget -q "${BASEURL}/downloadMHE.php?od=$downloadParameter" --load-cookies=cookies.txt -O - | grep -Eo ".*lib/highwindsDwn.php\?version=dlc-lin-mhe-en-us-[0-9]-[0-9]{1,2}(-[0-9])?" | grep -Eo "dlc-lin-mhe-en-us-[0-9]-[0-9]{1,2}(-[0-9])?$" | sort -u -t- -k 2,2n -k 3,3n -k 4,4n | tail -n 1)
+			latestVersionString=$(wget -q "${BASEURL}/downloadMHE.php?od=$downloadParameter" --load-cookies=cookies.txt -O - | grep -Eo ".*lib/highwindsDwn.php\?version=$VERSION_REGEX_DLC1" | grep -Eo "$VERSION_REGEX_DLC1$" | sort -u -t- -V | tail -n 1)
 			download "${latestVersionString}"
 			unzip -oq "${archiveFile}"
 			extractArchiv "KSP-Making_History_Expansion-en-us.zip"

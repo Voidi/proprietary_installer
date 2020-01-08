@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 #This scripts downloads the latest TeamSpeak3 Client installer for your architecture and creates and a program starter with icon.
 
-downloadBaseURL="http://dl.4players.de/ts/releases"
+versionURL="http://versions.teamspeak.com/ts3-client-3"
+downloadBaseURL="https://files.teamspeak-services.com/releases/client"
 
 #some Hackaround
 killLess() {
@@ -14,7 +15,7 @@ killLess() {
 downloadInstallerArchive() {
 	trap "rm $installer_file; sighandler_EXIT" 1 2 3 15
 	echo "Download latest Teamspeak3 Client install archive from Mirror ${downloadBaseURL}"
-	wget "${downloadBaseURL}/${version}/$(echo $installer_file | grep $arch)"
+	wget "${downloadBaseURL}/${version}/${installer_file}"
 	trap 1 2 3 15
 }
 
@@ -37,9 +38,9 @@ elif [ $(arch) = "x86_64" ]; then
 	arch=amd64
 fi
 
-#parse dirs given via http for latest release
-version="$(wget -q ${downloadBaseURL} -O - | sed -n -e 's/.*<a href=\"\(3\.[0-9]*\.[0-9]*.*\)\/\">.*/\1/p' | sort -t. -k 1,1n -k 2,2n -k 3,3n -k 4,4n | tail -n 1)"
-installer_file="$(wget -q ${downloadBaseURL}/${version}/ -O - | grep -o "TeamSpeak3-Client-linux_${arch}" | tail -n 1)-${version}.run"
+# get current version vom the official update url, parse binary response
+version="$(curl -s ${versionURL} | strings | sed -n '/stable/ {n;p}')"
+installer_file="TeamSpeak3-Client-linux_${arch}-${version}.run"
 
 #if you already download the latest version (via this script), place it in current dir, to skip download
 if [ ! -f ${installer_file} ];

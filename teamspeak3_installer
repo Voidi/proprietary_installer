@@ -39,7 +39,7 @@ elif [ $(arch) = "x86_64" ]; then
 fi
 
 # get current version vom the official update url, parse binary response
-version="$(wget -q ${versionURL} -O - | strings | sed -n '/stable/ {n;p}')"
+version="$(wget -q ${versionURL} -O - | sed -n '/stable/ {p}' | grep -oP '\d+\.\d+.\d+')"
 installer_file="TeamSpeak3-Client-linux_${arch}-${version}.run"
 
 #if you already download the latest version (via this script), place it in current dir, to skip download
@@ -938,15 +938,14 @@ cat > "${programPath}/TeamSpeakSystems-TeamSpeak3.desktop" <<EOF
 [Desktop Entry]
 Version=1.0
 Name=TeamSpeak 3 Client
-Terminal=false
+GenericName=Voicechat Client
 Icon=${programPath}/teamspeak3_icon.svg
 Type=Application
 Categories=Network;InstantMessaging;Qt
 Keywords=Voicechat;
-path="${programPath}"
+Path="${programPath}"
 Exec="${programPath}/ts3client_runscript.sh"
 StartupWMClass=Teamspeak
-StartupNotify=true
 StartupWMClass=ts3client_linux_amd64
 EOF
 xdg-desktop-menu install "${programPath}/TeamSpeakSystems-TeamSpeak3.desktop"
